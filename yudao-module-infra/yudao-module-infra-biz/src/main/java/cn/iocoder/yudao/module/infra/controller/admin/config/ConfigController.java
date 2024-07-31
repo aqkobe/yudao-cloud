@@ -1,6 +1,6 @@
 package cn.iocoder.yudao.module.infra.controller.admin.config;
 
-import cn.iocoder.yudao.framework.apilog.core.annotations.ApiAccessLog;
+import cn.iocoder.yudao.framework.apilog.core.annotation.ApiAccessLog;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
@@ -96,7 +96,7 @@ public class ConfigController {
     @Operation(summary = "导出参数配置")
     @PreAuthorize("@ss.hasPermission('infra:config:export')")
     @ApiAccessLog(operateType = EXPORT)
-    public void exportConfig(@Valid ConfigPageReqVO exportReqVO,
+    public void exportConfig(ConfigPageReqVO exportReqVO,
                              HttpServletResponse response) throws IOException {
         exportReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
         List<ConfigDO> list = configService.getConfigPage(exportReqVO).getList();

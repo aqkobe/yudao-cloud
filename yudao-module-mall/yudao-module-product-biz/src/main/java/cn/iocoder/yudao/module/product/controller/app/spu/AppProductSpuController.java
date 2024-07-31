@@ -101,7 +101,7 @@ public class AppProductSpuController {
             throw exception(SPU_NOT_EXISTS);
         }
         if (!ProductSpuStatusEnum.isEnable(spu.getStatus())) {
-            throw exception(SPU_NOT_ENABLE);
+            throw exception(SPU_NOT_ENABLE, spu.getName());
         }
         // 获得商品 SKU
         List<ProductSkuDO> skus = productSkuService.getSkuListBySpuId(spu.getId());
@@ -112,7 +112,7 @@ public class AppProductSpuController {
         productBrowseHistoryService.createBrowseHistory(getLoginUserId(), id);
 
         // 拼接返回
-        spu.setBrowseCount(spu.getBrowseCount() + spu.getVirtualSalesCount());
+        spu.setSalesCount(spu.getSalesCount() + spu.getVirtualSalesCount());
         AppProductSpuDetailRespVO spuVO = BeanUtils.toBean(spu, AppProductSpuDetailRespVO.class)
                 .setSkus(BeanUtils.toBean(skus, AppProductSpuDetailRespVO.Sku.class));
         // 处理 vip 价格

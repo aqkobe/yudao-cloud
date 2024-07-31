@@ -8,7 +8,7 @@ import cn.hutool.extra.template.TemplateConfig;
 import cn.hutool.extra.template.TemplateEngine;
 import cn.hutool.extra.template.engine.velocity.VelocityEngine;
 import cn.hutool.system.SystemUtil;
-import cn.iocoder.yudao.framework.apilog.core.annotations.ApiAccessLog;
+import cn.iocoder.yudao.framework.apilog.core.annotation.ApiAccessLog;
 import cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum;
 import cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
@@ -342,7 +342,8 @@ public class CodegenEngine {
 
         // className 相关
         // 去掉指定前缀，将 TestDictType 转换成 DictType. 因为在 create 等方法后，不需要带上 Test 前缀
-        String simpleClassName = removePrefix(table.getClassName(), upperFirst(table.getModuleName()));
+        String simpleClassName = equalsAnyIgnoreCase(table.getClassName(), table.getModuleName()) ? table.getClassName()
+                : removePrefix(table.getClassName(), upperFirst(table.getModuleName()));
         bindingMap.put("simpleClassName", simpleClassName);
         bindingMap.put("simpleClassName_underlineCase", toUnderlineCase(simpleClassName)); // 将 DictType 转换成 dict_type
         bindingMap.put("classNameVar", lowerFirst(simpleClassName)); // 将 DictType 转换成 dictType，用于变量

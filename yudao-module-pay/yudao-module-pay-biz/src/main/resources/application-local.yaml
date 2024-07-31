@@ -1,3 +1,20 @@
+--- #################### 注册中心 + 配置中心相关配置 ####################
+
+spring:
+  cloud:
+    nacos:
+      server-addr: 127.0.0.1:8848 # Nacos 服务器地址
+      username: # Nacos 账号
+      password: # Nacos 密码
+      discovery: # 【配置中心】配置项
+        namespace: dev # 命名空间。这里使用 dev 开发环境
+        group: DEFAULT_GROUP # 使用的 Nacos 配置分组，默认为 DEFAULT_GROUP
+        metadata:
+          version: 1.0.0 # 服务实例的版本号，可用于灰度发布
+      config: # 【注册中心】配置项
+        namespace: dev # 命名空间。这里使用 dev 开发环境
+        group: DEFAULT_GROUP # 使用的 Nacos 配置分组，默认为 DEFAULT_GROUP
+
 --- #################### 数据库相关配置 ####################
 spring:
   # 数据源配置项
@@ -40,27 +57,23 @@ spring:
       primary: master
       datasource:
         master:
-          name: ruoyi-vue-pro
-          url: jdbc:mysql://127.0.0.1:3306/${spring.datasource.dynamic.datasource.master.name}?allowMultiQueries=true&useUnicode=true&useSSL=false&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&autoReconnect=true&nullCatalogMeansCurrent=true # MySQL Connector/J 8.X 连接的示例
-          #          url: jdbc:mysql://127.0.0.1:3306/${spring.datasource.dynamic.datasource.master.name}?useSSL=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=CTT # MySQL Connector/J 5.X 连接的示例
-          #          url: jdbc:postgresql://127.0.0.1:5432/${spring.datasource.dynamic.datasource.master.name} # PostgreSQL 连接的示例
+          url: jdbc:mysql://127.0.0.1:3306/ruoyi-vue-pro?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true # MySQL Connector/J 8.X 连接的示例
+          #          url: jdbc:mysql://127.0.0.1:3306/ruoyi-vue-pro?useSSL=true&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai # MySQL Connector/J 5.X 连接的示例
+          #          url: jdbc:postgresql://127.0.0.1:5432/ruoyi-vue-pro # PostgreSQL 连接的示例
           #          url: jdbc:oracle:thin:@127.0.0.1:1521:xe # Oracle 连接的示例
-          #          url: jdbc:sqlserver://127.0.0.1:1433;DatabaseName=${spring.datasource.dynamic.datasource.master.name} # SQLServer 连接的示例
+          #          url: jdbc:sqlserver://127.0.0.1:1433;DatabaseName=ruoyi-vue-pro # SQLServer 连接的示例
+          #          url: jdbc:dm://10.211.55.4:5236?schema=RUOYI_VUE_PRO # DM 连接的示例
           username: root
           password: 123456
-        #          username: sa
-        #          password: JSm:g(*%lU4ZAkz06cd52KqT3)i1?H7W
+        #          username: sa # SQL Server 连接的示例
+        #          password: JSm:g(*%lU4ZAkz06cd52KqT3)i1?H7W # SQL Server 连接的示例
+        #          username: SYSDBA # DM 连接的示例
+        #          password: SYSDBA # DM 连接的示例
         slave: # 模拟从库，可根据自己需要修改
-          name: ruoyi-vue-pro
-          url: jdbc:mysql://127.0.0.1:3306/${spring.datasource.dynamic.datasource.slave.name}?allowMultiQueries=true&useUnicode=true&useSSL=false&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&autoReconnect=true&nullCatalogMeansCurrent=true # MySQL Connector/J 8.X 连接的示例
-          #          url: jdbc:mysql://127.0.0.1:3306/${spring.datasource.dynamic.datasource.slave.name}?useSSL=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=CTT # MySQL Connector/J 5.X 连接的示例
-          #          url: jdbc:postgresql://127.0.0.1:5432/${spring.datasource.dynamic.datasource.slave.name} # PostgreSQL 连接的示例
-          #          url: jdbc:oracle:thin:@127.0.0.1:1521:xe # Oracle 连接的示例
-          #          url: jdbc:sqlserver://127.0.0.1:1433;DatabaseName=${spring.datasource.dynamic.datasource.slave.name} # SQLServer 连接的示例
+          lazy: true # 开启懒加载，保证启动速度
+          url: jdbc:mysql://127.0.0.1:3306/ruoyi-vue-pro?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true
           username: root
           password: 123456
-  #          username: sa
-  #          password: JSm:g(*%lU4ZAkz06cd52KqT3)i1?H7W
 
   # Redis 配置。Redisson 默认的配置足够使用，一般不需要进行调优
   redis:
@@ -76,7 +89,7 @@ xxl:
   job:
     enabled: false # 是否开启调度中心，默认为 true 开启
     admin:
-      addresses: http://127.0.0.1:8000/xxl-job-admin # 调度中心部署跟地址
+      addresses: http://127.0.0.1:9090/xxl-job-admin # 调度中心部署跟地址
 
 --- #################### 服务保障相关配置 ####################
 
@@ -109,6 +122,8 @@ logging:
   level:
     # 配置自己写的 MyBatis Mapper 打印日志
     cn.iocoder.yudao.module.pay.dal.mysql: debug
+    cn.iocoder.yudao.module.pay.dal.mysql.notify.PayNotifyTaskMapper: INFO # 配置 PayNotifyTaskMapper 的日志级别为 info
+    org.springframework.context.support.PostProcessorRegistrationDelegate: ERROR # TODO 芋艿：先禁用，Spring Boot 3.X 存在部分错误的 WARN 提示
 
 --- #################### 芋道相关配置 ####################
 
@@ -118,16 +133,8 @@ yudao:
     tag: ${HOSTNAME}
   security:
     mock-enable: true
-  xss:
-    enable: false
-    exclude-urls: # 如下两个 url，仅仅是为了演示，去掉配置也没关系
-      - ${spring.boot.admin.context-path}/** # 不处理 Spring Boot Admin 的请求
-      - ${management.endpoints.web.base-path}/** # 不处理 Actuator 的请求
   access-log: # 访问日志的配置项
-    enable: false
-  error-code: # 错误码相关配置项
     enable: false
   pay:
     order-notify-url: http://yunai.natapp1.cc/admin-api/pay/notify/order # 支付渠道的【支付】回调地址
     refund-notify-url: http://yunai.natapp1.cc/admin-api/pay/notify/refund # 支付渠道的【退款】回调地址
-  demo: false # 关闭演示模式

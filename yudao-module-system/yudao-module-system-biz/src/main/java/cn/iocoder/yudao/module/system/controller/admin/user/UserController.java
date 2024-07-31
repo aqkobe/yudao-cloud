@@ -1,7 +1,7 @@
 package cn.iocoder.yudao.module.system.controller.admin.user;
 
 import cn.hutool.core.collection.CollUtil;
-import cn.iocoder.yudao.framework.apilog.core.annotations.ApiAccessLog;
+import cn.iocoder.yudao.framework.apilog.core.annotation.ApiAccessLog;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
@@ -119,6 +119,9 @@ public class UserController {
     @PreAuthorize("@ss.hasPermission('system:user:query')")
     public CommonResult<UserRespVO> getUser(@RequestParam("id") Long id) {
         AdminUserDO user = userService.getUser(id);
+        if (user == null) {
+            return success(null);
+        }
         // 拼接数据
         DeptDO dept = deptService.getDept(user.getDeptId());
         return success(UserConvert.INSTANCE.convert(user, dept));

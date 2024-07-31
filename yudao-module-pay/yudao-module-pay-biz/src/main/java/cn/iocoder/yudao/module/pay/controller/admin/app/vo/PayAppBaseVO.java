@@ -1,11 +1,12 @@
 package cn.iocoder.yudao.module.pay.controller.admin.app.vo;
+
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.validation.InEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
+import lombok.Data;
 import org.hibernate.validator.constraints.URL;
 
-import javax.validation.constraints.*;
+import javax.validation.constraints.NotNull;
 
 /**
 * 支付应用信息 Base VO，提供给添加、修改、详细的子 VO 使用
