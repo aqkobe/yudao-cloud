@@ -4,7 +4,7 @@ import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.iocoder.yudao.framework.apilog.core.service.ApiErrorLogFrameworkService;
+import cn.hutool.extra.servlet.JakartaServletUtil;
 import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
@@ -13,9 +13,12 @@ import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.framework.common.util.monitor.TracerUtils;
 import cn.iocoder.yudao.framework.common.util.servlet.ServletUtils;
 import cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils;
+import cn.iocoder.yudao.module.infra.api.logger.ApiErrorLogApi;
 import cn.iocoder.yudao.module.infra.api.logger.dto.ApiErrorLogCreateReqDTO;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.util.Assert;
 import org.springframework.validation.BindException;
@@ -36,7 +39,12 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
 
-import static cn.iocoder.yudao.framework.common.exception.enums.GlobalErrorCodeConstants.*;
+import static cn.iocoder.yudao.framework.common.exception.enums.GlobalErrorCodeConstants.BAD_REQUEST;
+import static cn.iocoder.yudao.framework.common.exception.enums.GlobalErrorCodeConstants.FORBIDDEN;
+import static cn.iocoder.yudao.framework.common.exception.enums.GlobalErrorCodeConstants.INTERNAL_SERVER_ERROR;
+import static cn.iocoder.yudao.framework.common.exception.enums.GlobalErrorCodeConstants.METHOD_NOT_ALLOWED;
+import static cn.iocoder.yudao.framework.common.exception.enums.GlobalErrorCodeConstants.NOT_FOUND;
+import static cn.iocoder.yudao.framework.common.exception.enums.GlobalErrorCodeConstants.NOT_IMPLEMENTED;
 
 /**
  * 全局异常处理器，将 Exception 翻译成 CommonResult + 对应的异常编号
@@ -56,7 +64,7 @@ public class GlobalExceptionHandler {
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     private final String applicationName;
 
-    private final ApiErrorLogFrameworkService apiErrorLogFrameworkService;
+    private final ApiErrorLogApi apiErrorLogApi;
 
     /**
      * 处理所有异常，主要是提供给 Filter 使用
@@ -88,6 +96,9 @@ public class GlobalExceptionHandler {
         if (ex instanceof NoHandlerFoundException) {
             return noHandlerFoundExceptionHandler((NoHandlerFoundException) ex);
         }
+//        if (ex instanceof NoResourceFoundException) {
+//            return noResourceFoundExceptionHandler(request, (NoResourceFoundException) ex);
+//        }
         if (ex instanceof HttpRequestMethodNotSupportedException) {
             return httpRequestMethodNotSupportedExceptionHandler((HttpRequestMethodNotSupportedException) ex);
         }
@@ -118,7 +129,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public CommonResult<?> methodArgumentTypeMismatchExceptionHandler(MethodArgumentTypeMismatchException ex) {
-        log.warn("[missingServletRequestParameterExceptionHandler]", ex);
+        log.warn("[methodArgumentTypeMismatchExceptionHandler]", ex);
         return CommonResult.error(BAD_REQUEST.getCode(), String.format("请求参数类型错误:%s", ex.getMessage()));
     }
 
@@ -142,6 +153,22 @@ public class GlobalExceptionHandler {
         FieldError fieldError = ex.getFieldError();
         assert fieldError != null; // 断言，避免告警
         return CommonResult.error(BAD_REQUEST.getCode(), String.format("请求参数不正确:%s", fieldError.getDefaultMessage()));
+    }
+
+    /**
+     * 处理 SpringMVC 请求参数类型错误
+     *
+     * 例如说，接口上设置了 @RequestBody实体中 xx 属性类型为 Integer，结果传递 xx 参数类型为 String
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public CommonResult<?> methodArgumentTypeInvalidFormatExceptionHandler(HttpMessageNotReadableException ex) {
+        log.warn("[methodArgumentTypeInvalidFormatExceptionHandler]", ex);
+        if(ex.getCause() instanceof InvalidFormatException) {
+            InvalidFormatException invalidFormatException = (InvalidFormatException) ex.getCause();
+            return CommonResult.error(BAD_REQUEST.getCode(), String.format("请求参数类型错误:%s", invalidFormatException.getValue()));
+        }else {
+            return defaultExceptionHandler(ServletUtils.getRequest(), ex);
+        }
     }
 
     /**
@@ -176,6 +203,15 @@ public class GlobalExceptionHandler {
         log.warn("[noHandlerFoundExceptionHandler]", ex);
         return CommonResult.error(NOT_FOUND.getCode(), String.format("请求地址不存在:%s", ex.getRequestURL()));
     }
+
+//    /**
+//     * 处理 SpringMVC 请求地址不存在
+//     */
+//    @ExceptionHandler(NoResourceFoundException.class)
+//    private CommonResult<?> noResourceFoundExceptionHandler(HttpServletRequest req, NoResourceFoundException ex) {
+//        log.warn("[noResourceFoundExceptionHandler]", ex);
+//        return CommonResult.error(NOT_FOUND.getCode(), String.format("请求地址不存在:%s", ex.getResourcePath()));
+//    }
 
     /**
      * 处理 SpringMVC 请求方法不正确
@@ -251,7 +287,7 @@ public class GlobalExceptionHandler {
             // 初始化 errorLog
             buildExceptionLog(errorLog, req, e);
             // 执行插入 errorLog
-            apiErrorLogFrameworkService.createApiErrorLog(errorLog);
+            apiErrorLogApi.createApiErrorLogAsync(errorLog);
         } catch (Throwable th) {
             log.error("[createExceptionLog][url({}) log({}) 发生异常]", req.getRequestURI(),  JsonUtils.toJsonString(errorLog), th);
         }
@@ -345,6 +381,12 @@ public class GlobalExceptionHandler {
             log.error("[AI 大模型 yudao-module-ai - 表结构未导入][参考 https://cloud.iocoder.cn/ai/build/ 开启]");
             return CommonResult.error(NOT_IMPLEMENTED.getCode(),
                     "[AI 大模型 yudao-module-ai - 表结构未导入][参考 https://cloud.iocoder.cn/ai/build/ 开启]");
+        }
+        // 9. IOT 物联网
+        if (message.contains("iot_")) {
+            log.error("[IOT 物联网 yudao-module-iot - 表结构未导入][参考 https://doc.iocoder.cn/iot/build/ 开启]");
+            return CommonResult.error(NOT_IMPLEMENTED.getCode(),
+                    "[IOT 物联网 yudao-module-iot - 表结构未导入][参考 https://doc.iocoder.cn/iot/build/ 开启]");
         }
         return null;
     }

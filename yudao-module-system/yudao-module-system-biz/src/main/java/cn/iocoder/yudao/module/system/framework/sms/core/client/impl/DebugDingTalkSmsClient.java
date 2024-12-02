@@ -13,7 +13,6 @@ import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.module.system.framework.sms.core.client.dto.SmsReceiveRespDTO;
 import cn.iocoder.yudao.module.system.framework.sms.core.client.dto.SmsSendRespDTO;
 import cn.iocoder.yudao.module.system.framework.sms.core.client.dto.SmsTemplateRespDTO;
-import cn.iocoder.yudao.module.system.framework.sms.core.client.impl.AbstractSmsClient;
 import cn.iocoder.yudao.module.system.framework.sms.core.enums.SmsTemplateAuditStatusEnum;
 import cn.iocoder.yudao.module.system.framework.sms.core.property.SmsChannelProperties;
 
@@ -35,10 +34,6 @@ public class DebugDingTalkSmsClient extends AbstractSmsClient {
         super(properties);
         Assert.notEmpty(properties.getApiKey(), "apiKey 不能为空");
         Assert.notEmpty(properties.getApiSecret(), "apiSecret 不能为空");
-    }
-
-    @Override
-    protected void doInit() {
     }
 
     @Override

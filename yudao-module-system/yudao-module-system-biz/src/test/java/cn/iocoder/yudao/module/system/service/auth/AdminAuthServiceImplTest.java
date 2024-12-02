@@ -3,7 +3,6 @@ package cn.iocoder.yudao.module.system.service.auth;
 import cn.hutool.core.util.ReflectUtil;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.enums.UserTypeEnum;
-import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.test.core.ut.BaseDbUnitTest;
 import cn.iocoder.yudao.module.system.api.sms.SmsCodeApi;
 import cn.iocoder.yudao.module.system.api.social.dto.SocialUserBindReqDTO;
@@ -212,13 +211,13 @@ public class AdminAuthServiceImplTest extends BaseDbUnitTest {
         String mobile = randomString();
         String code = randomString();
         AuthSmsLoginReqVO reqVO = new AuthSmsLoginReqVO(mobile, code);
-        // mock 方法（校验验证码）
-        when(smsCodeApi.useSmsCode(argThat(reqDTO -> {
-            assertEquals(mobile, reqDTO.getMobile());
-            assertEquals(code, reqDTO.getCode());
-            assertEquals(SmsSceneEnum.ADMIN_MEMBER_LOGIN.getScene(), reqDTO.getScene());
+        // mock 方法（验证码）
+        when(smsCodeApi.useSmsCode(argThat(smsCodeUseReqDTO -> {
+            assertEquals(mobile, smsCodeUseReqDTO.getMobile());
+            assertEquals(code, smsCodeUseReqDTO.getCode());
+            assertEquals(SmsSceneEnum.ADMIN_MEMBER_LOGIN.getScene(), smsCodeUseReqDTO.getScene());
             return true;
-        }))).thenReturn(success(true));
+        }))).thenReturn(success(null));
         // mock 方法（用户信息）
         AdminUserDO user = randomPojo(AdminUserDO.class, o -> o.setId(1L));
         when(userService.getUserByMobile(eq(mobile))).thenReturn(user);

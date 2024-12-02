@@ -3,7 +3,7 @@ package cn.iocoder.yudao.module.ai.controller.admin.model.vo.chatRole;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.validation.InEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
+import lombok.Data;
 import org.hibernate.validator.constraints.URL;
 
 import javax.validation.constraints.NotEmpty;
